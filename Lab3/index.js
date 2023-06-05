@@ -1,10 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+import cookieParser from "cookie-parser";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 const users = [];
 
 const secretKey = 'my-secret-key';
@@ -29,13 +31,13 @@ function verifyToken(token) {
 }
 
 function authenticateToken(req, res, next) {
-    const { authorization } = req.headers;
-    if (!authorization) {
+    const { token } = req.cookies
+    if (!token) {
         return res.status(401).json({
             message: "Unauthorized"
         })
     }
-    const user = verifyToken(authorization);
+    const user = verifyToken(token);
 
     if (!user) {
         return res.status(401).json({
@@ -95,6 +97,7 @@ app.post("/login", async (req, res) => {
 
     const token = generateToken({ id: user.id, username: user.username });
 
+    res.cookie("token", token, { maxAge: 300 * 1000 })
     res.status(200).json({
         token
     })
